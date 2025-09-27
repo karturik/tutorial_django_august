@@ -1,0 +1,18 @@
+[project]
+name = "tutorial-project-django-august"
+version = "0.1.0"
+description = "This is tutorial project"
+authors = [
+    {name = "academy"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django (>=5.2.6,<6.0.0)"
+]
+package-mode = false
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
