@@ -22,6 +22,7 @@ class Book(models.Model):
     summary = models.TextField(max_length=1000, help_text="Enter a brief description of the book")
     isbn = models.CharField('ISBN', max_length=13, help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn">ISBN number</a>')
     genre = models.ManyToManyField(Genre, help_text="Select a genre for this book")
+    language = models.ForeignKey('Language', on_delete=models.SET_NULL, null=True)
     
     def __str__(self) -> str:
         return self.title
@@ -80,3 +81,12 @@ class Author(models.Model):
         String for representing the Model object.
         """
         return '%s, %s' % (self.last_name, self.first_name)
+    
+class Language(models.Model):
+    """
+    Class for Book Language model
+    """
+    name = models.CharField(max_length=2)
+
+    def __str__(self) -> str:
+        return self.name
