@@ -27,7 +27,15 @@
                     {% include "navbar.html" %}
                     {% endblock %}
                 </div>
+                <div class="row">
+                    <p>Current page: {{ request.get_full_path }}</p>
+                </div>
+                <div class="row">
                 {% block content %}{% endblock %}
+                {% block pagination %}
+                {% include "pagination.html" %}
+                {% endblock %}
+                </div>
             </div>
             <div class="col-sm-2">
             </div>
