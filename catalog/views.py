@@ -35,8 +35,10 @@ def index(request) -> HttpResponse:
 class BookListView(generic.ListView):
     model = Book
     context_object_name = 'my_book_list'
-    queryset = Book.objects.filter(title__icontains='war')[:5]
+    queryset = Book.objects.all()
     template_name = 'books/book_list_page.html'
+
+    paginate_by = 1
 
     # def get_queryset(self) -> QuerySet[Any]:
     #     return Book.objects.filter(title__icontains='war')[:5]
@@ -46,3 +48,8 @@ class BookListView(generic.ListView):
 
         context['some_data'] = 'This is just some data'
         return context
+    
+
+class BookDetailView(generic.DetailView):
+    model = Book
+    template_name = "books/book_detail.html"
