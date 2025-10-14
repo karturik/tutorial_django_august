@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "catalog.apps.CatalogConfig"
+    "catalog.apps.CatalogConfig",
+    "users_and_accounts.apps.UsersAndAccountsConfig"
 ]
 
 MIDDLEWARE = [
@@ -60,7 +61,8 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
-           os.path.join(BASE_DIR, "locallibrary", "templates") 
+           os.path.join(BASE_DIR, "locallibrary", "templates"),
+           os.path.join(BASE_DIR, "users_and_accounts", "templates")
         ],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -127,3 +129,7 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+LOGIN_REDIRECT_URL = "/"
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

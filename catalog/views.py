@@ -1,8 +1,11 @@
 from typing import Any
 from django.db.models.query import QuerySet
 from django.views import generic
+from django.urls import reverse
 from django.shortcuts import render
 from django.http.response import HttpResponse
+
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .models import Book, Author, BookInstance, Genre
 
@@ -71,3 +74,16 @@ class BookDetailView(generic.DetailView):
         num_visits = request.session.get(session_key, 0)
         request.session[session_key] = num_visits + 1
         return super().get(request, *args, **kwargs)
+
+
+class LoanedBooksByUserListView(LoginRequiredMixin, generic.ListView):
+    """
+    Generic class-based view listing books on loan to current user.
+    """
+    model = BookInstance
+    template_name = "books/bookinstance_list_borrowed_user.html"
+    paginate_by = 10
+    login_url = "/user/accounts/login"
+
+    def get_queryset(self) -> QuerySet[Any]:
+        return BookInstance.objects.filter(borrower=self.request.user).filter(status__exact="o").order_by('due_back')
