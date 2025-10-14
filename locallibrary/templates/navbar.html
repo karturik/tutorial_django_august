@@ -1,7 +1,8 @@
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
   <div class="container-fluid">
     <a class="navbar-brand" href="#">Library</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -15,9 +16,28 @@
         <li class="nav-item">
           <a class="nav-link" href="#">All Authors</a>
         </li>
+        {% if user.is_authenticated %}
+          <li class="nav-item">
+            {{ user.get_username }}
+          </li>
+          <li class="nav-item">
+            <form action="{% url 'logout' %}" method="post" style="display: inline;">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.path }}">
+              <button type="submit" style="background: none; border: none; padding: 0; color: inherit; cursor: pointer;">Logout</button>
+            </form>
+          </li>
+          <li class="nav-item">
+            <a href="{% url 'my-borrowed' %}" class="nav-link" aria-current="page" >My Books</a>
+          </li>
+        {% else %}
+        <li class="nav-item">
+          <a href="{% url 'login' %}?next={{ request.path }}">Login</a>
+        </li>
+        {% endif %}
       </ul>
       <form class="d-flex" role="search">
-        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search"/>
+        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" />
         <button class="btn btn-outline-success" type="submit">Search</button>
       </form>
     </div>
