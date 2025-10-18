@@ -1,13 +1,19 @@
 from typing import Any
+import datetime
 from django.db.models.query import QuerySet
 from django.views import generic
-from django.urls import reverse
-from django.shortcuts import render
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.urls import reverse, reverse_lazy
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponseRedirect
 from django.http.response import HttpResponse
 
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import permission_required
+
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 
 from .models import Book, Author, BookInstance, Genre
+from .forms import RenewBookForm
 
 # Create your views here.
 def index(request) -> HttpResponse:
@@ -87,3 +93,70 @@ class LoanedBooksByUserListView(LoginRequiredMixin, generic.ListView):
 
     def get_queryset(self) -> QuerySet[Any]:
         return BookInstance.objects.filter(borrower=self.request.user).filter(status__exact="o").order_by('due_back')
+
+@permission_required('catalog.can_mark_returned')
+def renew_book_librarian(request, pk):
+    book_inst = get_object_or_404(BookInstance, pk=pk)
+
+    if request.method == 'POST':
+        form = RenewBookForm(request.POST)
+
+        if form.is_valid():
+            book_inst.due_back = form.cleaned_data['renewal_date']
+
+            book_inst.save()
+
+            return HttpResponseRedirect(reverse('book-detail', kwargs= {"pk": book_inst.book.id}))
+    
+    else:
+        proposed_renewal_date = datetime.date.today() + datetime.timedelta(weeks=3)
+        form = RenewBookForm(initial={
+            'renewal_date': proposed_renewal_date,
+        })
+
+    context = {
+        'form': form,
+        'bookinst': book_inst
+    }
+
+    return render(request, 'books/book_renew_librarian.html',
+                    context=context)
+
+class AuthorCreate(PermissionRequiredMixin, CreateView):
+
+    permission_required = (
+        "catalog.can_mark_returned"
+    )
+
+    model = Author
+    fields = '__all__'
+    initial = {
+        "date_of_death": "12/10/2016"
+    }
+    template_name = 'authors/author_form.html'
+
+class AuthorUpdate(PermissionRequiredMixin, UpdateView):
+
+    permission_required = (
+        "catalog.can_mark_returned"
+    )
+
+    model = Author
+    fields = [
+        'first_name',
+        'last_name',
+        'date_of_birth',
+        'date_of_death'
+    ]
+    template_name = 'authors/author_form.html'
+
+class AuthorDelete(PermissionRequiredMixin, DeleteView):
+
+    permission_required = (
+        "catalog.can_mark_returned"
+    )
+
+    model = Author
+    success_url = reverse_lazy('index')
+
+    template_name = 'authors/author_confirm_delete.html'
