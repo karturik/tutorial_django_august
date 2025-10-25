@@ -160,3 +160,9 @@ class AuthorDelete(PermissionRequiredMixin, DeleteView):
     success_url = reverse_lazy('index')
 
     template_name = 'authors/author_confirm_delete.html'
+
+class AuthorListView(generic.ListView):
+    model = Author
+    paginate_by = 10
+
+    template_name = 'authors/authors_list_page.html'
