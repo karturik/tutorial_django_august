@@ -21,13 +21,20 @@ class AuthorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Author
         fields = [
+            'url',
             'id', 
             'first_name', 
             'last_name', 
             'date_of_birth', 
             'date_of_death',
             # Позже добавим сюда 'books'
-            ] 
+            ]
+        extra_kwargs = {
+            'url': {
+                'view_name': 'api:author-detail', 
+                'lookup_field': 'pk'
+            }
+        }
         
 # --- Сериализатор для Книги ---
 # class BookSerializer(serializers.ModelSerializer):
@@ -64,47 +71,78 @@ class AuthorSerializer(serializers.ModelSerializer):
 #         # Можно также указать read_only_fields, если какие-то поля нельзя изменять через API
 #         # read_only_fields = ['display_genre', 'get_absolute_url']
 
-class BookSerializer(serializers.ModelSerializer):
-    # Поля для записи (используют ID)
-    author_id = serializers.PrimaryKeyRelatedField(
-        queryset=Author.objects.all(), source='author', write_only=True
-    )
-    language_id = serializers.PrimaryKeyRelatedField(
-        queryset=Language.objects.all(), source='language', write_only=True
-    )
-    genre_ids = serializers.PrimaryKeyRelatedField(
-        queryset=Genre.objects.all(), source='genre', write_only=True, many=True
-    )
+# class BookSerializer(serializers.ModelSerializer):
+#     # Поля для записи (используют ID)
+#     author_id = serializers.PrimaryKeyRelatedField(
+#         queryset=Author.objects.all(), source='author', write_only=True
+#     )
+#     language_id = serializers.PrimaryKeyRelatedField(
+#         queryset=Language.objects.all(), source='language', write_only=True
+#     )
+#     genre_ids = serializers.PrimaryKeyRelatedField(
+#         queryset=Genre.objects.all(), source='genre', write_only=True, many=True
+#     )
 
-    # Поля только для чтения (используют строковое представление)
-    author = serializers.StringRelatedField(read_only=True)
-    language = serializers.StringRelatedField(read_only=True)
-    genre = serializers.StringRelatedField(many=True, read_only=True)
+#     # Поля только для чтения (используют строковое представление)
+#     author = serializers.StringRelatedField(read_only=True)
+#     language = serializers.StringRelatedField(read_only=True)
+#     genre = serializers.StringRelatedField(many=True, read_only=True)
 
-    # Поле только для чтения, которое показывает ID связанных жанров (для информации)
-    genre_ids_read = serializers.PrimaryKeyRelatedField(
-        source='genre', read_only=True, many=True, help_text="IDs of related genres (read-only)"
+#     # Поле только для чтения, которое показывает ID связанных жанров (для информации)
+#     genre_ids_read = serializers.PrimaryKeyRelatedField(
+#         source='genre', read_only=True, many=True, help_text="IDs of related genres (read-only)"
+#     )
+
+
+#     class Meta:
+#         model = Book
+#         fields = [
+#             'id', 
+#             'title', 
+#             # Поля для чтения
+#             'author', 
+#             'language', 
+#             'genre', 
+#             # Поля для записи (будут видны в формах Browsable API)
+#             'author_id',
+#             'language_id',
+#             'genre_ids',
+#             # Дополнительные поля
+#             'summary', 
+#             'isbn', 
+#             'display_genre', # Метод модели
+#             'genre_ids_read', # ID жанров для чтения
+#             # 'get_absolute_url', 
+#         ]
+#         # Указывать read_only_fields не нужно, т.к. мы явно пометили поля для чтения
+
+class BookSerializer(serializers.HyperlinkedModelSerializer):
+    # Связи теперь будут гиперссылками
+    author = serializers.HyperlinkedRelatedField(
+        view_name='api:author-detail', read_only=True # Или queryset для записи
     )
-
+    language = serializers.HyperlinkedRelatedField(
+        view_name='api:language-detail', read_only=True
+    )
+    genre = serializers.HyperlinkedRelatedField(
+        many=True, view_name='api:genre-detail', read_only=True
+    )
 
     class Meta:
         model = Book
         fields = [
+            'url', # Добавляем URL самой книги
             'id', 
             'title', 
-            # Поля для чтения
             'author', 
-            'language', 
-            'genre', 
-            # Поля для записи (будут видны в формах Browsable API)
-            'author_id',
-            'language_id',
-            'genre_ids',
-            # Дополнительные поля
             'summary', 
             'isbn', 
-            'display_genre', # Метод модели
-            'genre_ids_read', # ID жанров для чтения
-            # 'get_absolute_url', 
+            'genre', 
+            'language',
         ]
-        # Указывать read_only_fields не нужно, т.к. мы явно пометили поля для чтения
+        extra_kwargs = {
+            'url': {
+                'view_name': 'api:book-detail', 
+                'lookup_field': 'pk'
+                }
+        }
