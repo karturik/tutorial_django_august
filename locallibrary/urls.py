@@ -17,9 +17,21 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("catalog/", include('catalog.urls')),
-    path("user/", include('users_and_accounts.urls'))
+    path("user/", include('users_and_accounts.urls')),
+
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('api/', include('api.urls', namespace='api')),
+
+    # --- Добавляем URL для документации API ---
+    # Схема OpenAPI (обычно YAML или JSON файл)
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Swagger UI: интерактивный интерфейс для исследования и тестирования API
+    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    # Redoc: альтернативный интерфейс для просмотра документации
+    path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
