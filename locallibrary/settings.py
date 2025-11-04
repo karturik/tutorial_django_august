@@ -182,3 +182,6 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False, # Не включать схему в сами интерфейсы (лучше загружать отдельно)
     # 'SCHEMA_PATH_PREFIX': r'/api/v[0-9]', # Если у вас есть версионирование URL
 }
+
+MEDIA_ROOT = os.path.join("locallibrary", "media")
+MEDIA_URL = "locallibrary/media/"

@@ -166,3 +166,15 @@ class AuthorListView(generic.ListView):
     paginate_by = 10
 
     template_name = 'authors/authors_list_page.html'
+
+def searching(request):
+    if request.method == "POST":
+        # print(f'Get post data: {request.POST}')
+        searched = request.POST.get('searched').title()
+        books_results = Book.objects.filter(title__icontains=searched)
+        authors_results = Author.objects.filter(first_name__icontains=searched)
+        return render(request, "catalog/search_page.html", {'searched': searched, 
+                                                            'books_results': books_results,
+                                                            'authors_results': authors_results})
+    else:
+        return render(request, "catalog/search_page.html")

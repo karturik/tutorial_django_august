@@ -4,6 +4,8 @@ from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import User
 
+from django.conf import settings
+
 # Create your models here.
 class Genre(models.Model):
     """
@@ -25,12 +27,13 @@ class Book(models.Model):
     isbn = models.CharField('ISBN', max_length=13, help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn">ISBN number</a>')
     genre = models.ManyToManyField(Genre, help_text="Select a genre for this book")
     language = models.ForeignKey('Language', on_delete=models.SET_NULL, null=True)
+    cover = models.ImageField(upload_to=settings.MEDIA_ROOT, help_text="Upload image cover", null=True, blank=True)
     
     def __str__(self) -> str:
         return self.title
     
     def get_absolute_url(self):
-        return reverse('book-detail', args=[str(self.id)])
+        return reverse('book-detail', args=[str(self.pk)])
     
     def display_genre(self):
         """

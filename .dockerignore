@@ -1,0 +1,14 @@
+.venv/
+**/__pychache__/
+*.pyc
+
+.git
+.gitignore
+
+Dockerfile
+.dockerignore
+
+.DS_Store
+
+.vscode/
+.idea/
