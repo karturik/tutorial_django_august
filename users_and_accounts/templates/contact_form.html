@@ -1,0 +1,129 @@
+{% extends 'base_generic.html' %}
+
+{% block content %}
+<div class="container mt-5 w-50">
+  <h2>Contact Us</h2>
+  
+  <div id="form-messages" class="mb-3"></div> 
+
+  <form id="contactForm" method="POST" action="{% url 'contact_form' %}" novalidate> 
+    {% csrf_token %}
+
+    {{ form.as_p }}
+
+    <div id="error-name" class="invalid-feedback d-block"></div>
+    <div id="error-email" class="invalid-feedback d-block"></div>
+    <div id="error-message" class="invalid-feedback d-block"></div>
+
+    <button type="submit" class="btn btn-primary">Send Message</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const contactForm = document.getElementById('contactForm');
+  const formMessages = document.getElementById('form-messages');
+  // Предполагаем, что у вас есть элементы для ошибок полей, например:
+  const errorName = document.getElementById('error-name'); 
+  const errorEmail = document.getElementById('error-email');
+  const errorMessage = document.getElementById('error-message');
+
+  if (contactForm) {
+    contactForm.addEventListener('submit', function(event) {
+      // 1. Отменяем стандартное поведение отправки формы (перезагрузку страницы)
+      event.preventDefault(); 
+
+      // Очищаем предыдущие сообщения об успехе/ошибках
+      formMessages.innerHTML = '';
+      formMessages.className = ''; // Сброс классов стилизации
+      // Очищаем ошибки полей (если вы их выводите отдельно)
+      document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+      document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+
+
+      // 2. Собираем данные формы
+      const formData = new FormData(contactForm);
+      
+      // 3. Получаем CSRF-токен (ОЧЕНЬ ВАЖНО для POST)
+      // Django ищет токен в данных формы или в заголовке 'X-CSRFToken'
+      // FormData уже включает csrfmiddlewaretoken из скрытого поля формы.
+      // Если бы мы отправляли JSON, пришлось бы получать его иначе:
+      // const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+      // 4. Отправляем AJAX POST-запрос с помощью Fetch API
+      fetch(contactForm.action, { // Используем action формы как URL
+        method: 'POST',
+        headers: {
+          // --- ВАЖНО для Django 4+ при использовании fetch ---
+          // Добавляем заголовок, чтобы Django понял, что это AJAX-запрос
+          'X-Requested-With': 'XMLHttpRequest', 
+          // При отправке FormData НЕ НУЖНО устанавливать 'Content-Type'. 
+          // Браузер сделает это сам с правильным boundary.
+          // Если бы отправляли JSON, нужно было бы:
+          // 'Content-Type': 'application/json',
+          // 'X-CSRFToken': csrfToken // Передаем CSRF-токен в заголовке
+        },
+        body: formData // Передаем собранные данные формы
+        // Если бы отправляли JSON:
+        // body: JSON.stringify(Object.fromEntries(formData)) 
+      })
+      .then(response => {
+        // Получаем статус ответа и пытаемся распарсить JSON
+        // response.json() вызовет ошибку, если тело пустое или не JSON
+        // Поэтому лучше сначала проверить статус, а потом парсить
+        if (response.ok) { // Статус 200-299
+          return response.json().then(data => ({ status: response.status, body: data }));
+        } else { // Статус 400, 500 и т.д.
+          // Пытаемся получить ошибки из JSON, если сервер их вернул (например, при status 400)
+           return response.json().then(data => Promise.reject({ status: response.status, body: data })).catch(e => Promise.reject({ status: response.status, body: null })); // Если не JSON или другая ошибка парсинга
+        }
+      })
+      .then(result => {
+        // --- Обработка УСПЕШНОГО ответа (status 200) ---
+        const data = result.body;
+        formMessages.textContent = data.message || 'Сообщение успешно отправлено!';
+        formMessages.className = 'alert alert-success'; // Стилизуем сообщение об успехе
+        contactForm.reset(); // Очищаем форму после успешной отправки
+      })
+      .catch(errorInfo => {
+         // --- Обработка ОШИБОЧНОГО ответа (status 400, 500 и т.д.) ---
+        console.error('Ошибка отправки формы:', errorInfo);
+        formMessages.textContent = 'Произошла ошибка при отправке формы.';
+        formMessages.className = 'alert alert-danger'; // Стилизуем общее сообщение об ошибке
+
+        if (errorInfo.status === 400 && errorInfo.body && errorInfo.body.errors) {
+            // Если сервер вернул ошибки валидации (status 400)
+            formMessages.textContent = 'Пожалуйста, исправьте ошибки в форме.';
+            const errors = errorInfo.body.errors;
+            // Отображаем ошибки рядом с соответствующими полями
+            for (const fieldName in errors) {
+                const errorList = errors[fieldName]; // Список ошибок для поля
+                const fieldElement = document.getElementById(`id_${fieldName}`); // Находим поле ввода
+                const errorElement = document.getElementById(`error-${fieldName}`); // Находим место для ошибки поля
+
+                if (fieldElement) {
+                    fieldElement.classList.add('is-invalid'); // Помечаем поле как невалидное
+                }
+                 if (errorElement && errorList.length > 0) {
+                     // Выводим первую ошибку из списка
+                     errorElement.textContent = errorList[0].message || errorList[0]; // Django может возвращать список объектов или строк
+                 } else if (fieldElement && errorList.length > 0) {
+                     // Если нет специального места, можем вставить после поля
+                     // (более сложный вариант, требует аккуратности)
+                     // fieldElement.insertAdjacentHTML('afterend', `<div class="invalid-feedback d-block">${errorList[0].message || errorList[0]}</div>`);
+                 }
+            }
+        } else {
+             // Другие ошибки (500, сетевые проблемы и т.д.)
+             formMessages.textContent = `Ошибка ${errorInfo.status}: Не удалось отправить форму. Попробуйте позже.`;
+        }
+      });
+    });
+  } else {
+     console.error("Не найден элемент #contactForm");
+  }
+});
+</script>
+{% endblock javascript %}

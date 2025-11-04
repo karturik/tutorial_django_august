@@ -1,0 +1,91 @@
+{% extends 'base_generic.html' %}
+
+{% block content %}
+<div class="container mt-5 w-50">
+  <h2>Sign Up</h2>
+  <form id="signupForm" method="POST" novalidate>
+    {% csrf_token %}
+    
+    {{ form.as_p }}
+    
+    <div id="username-feedback"></div> 
+    
+    <button type="submit" class="btn btn-success btn-lg">Sign Up</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block javascript %}
+  <script>
+    // Ждем, пока весь HTML-документ будет загружен и готов
+    document.addEventListener('DOMContentLoaded', function() {
+      
+      // Находим поле ввода имени пользователя по его ID
+      const usernameInput = document.getElementById('id_username'); 
+      // Находим место для вывода сообщения
+      const feedbackDiv = document.getElementById('username-feedback'); 
+
+      // Проверяем, что элементы найдены, прежде чем вешать обработчик
+      if (usernameInput && feedbackDiv) {
+        
+        // Слушаем событие 'input'. Оно срабатывает каждый раз, 
+        // когда значение в поле изменяется (ввод, удаление, вставка).
+        // 'keyup' тоже сработает, но 'input' более универсален.
+        usernameInput.addEventListener('input', function() {
+          
+          // Получаем текущее значение из поля ввода
+          const username = this.value; 
+
+          // Очищаем предыдущие сообщения и стили
+          feedbackDiv.textContent = ''; 
+          usernameInput.classList.remove('is-valid', 'is-invalid');
+
+          // Не отправляем запрос, если поле пустое
+          if (username.trim() === '') {
+            return; 
+          }
+
+          // Формируем URL для AJAX-запроса, добавляя имя пользователя как GET-параметр
+          // Используем encodeURIComponent для корректной обработки спецсимволов в имени
+          const url = `{% url 'validate_username' %}?username=${encodeURIComponent(username)}`;
+
+          // --- Отправляем AJAX GET-запрос с помощью Fetch API ---
+          fetch(url)
+            .then(response => {
+              // Проверяем, успешен ли HTTP-ответ (код 2xx)
+              if (!response.ok) {
+                // Если нет, создаем ошибку, чтобы перейти в блок catch
+                throw new Error(`HTTP error! status: ${response.status}`); 
+              }
+              // Если все ОК, парсим тело ответа как JSON
+              return response.json(); 
+            })
+            .then(data => {
+              // --- Обрабатываем полученные JSON-данные ---
+              if (data.is_taken) {
+                // Имя занято: добавляем класс для красной рамки и выводим сообщение
+                usernameInput.classList.add('is-invalid');
+                feedbackDiv.textContent = 'Это имя пользователя уже занято!';
+                feedbackDiv.className = 'invalid-feedback d-block'; // Используем Bootstrap классы для стилизации
+              } else {
+                // Имя свободно: добавляем класс для зеленой рамки и выводим сообщение
+                usernameInput.classList.add('is-valid');
+                 feedbackDiv.textContent = 'Это имя пользователя свободно.';
+                 feedbackDiv.className = 'valid-feedback d-block'; // Используем Bootstrap классы для стилизации
+              }
+            })
+            .catch(error => {
+              // --- Обрабатываем ошибки сети или ошибки парсинга JSON ---
+              console.error('Ошибка при проверке имени пользователя:', error);
+              feedbackDiv.textContent = 'Не удалось проверить имя пользователя. Попробуйте позже.';
+              feedbackDiv.className = 'invalid-feedback d-block'; 
+              // Можно добавить класс ошибки и к input, если нужно
+              usernameInput.classList.add('is-invalid'); 
+            });
+        });
+      } else {
+        console.error("Не найден элемент #id_username или #username-feedback");
+      }
+    });
+  </script>
+{% endblock javascript %}
